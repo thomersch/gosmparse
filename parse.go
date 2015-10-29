@@ -88,13 +88,14 @@ func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
 	// fmt.Printf("Blob Data read: %v\n", time.Now().Sub(tStart))
 
 	for _, pg := range pb.GetPrimitivegroup() {
+		fmt.Println(pg.Dense != nil, pg.Ways != nil, pg.Relations != nil)
 		switch {
 		case pg.Dense != nil:
-			return denseNode(o, pb, pg.GetDense())
+			return denseNode(o, pb, pg.Dense)
 		case pg.Ways != nil:
-
+			return way(o, pb, pg.Ways)
 		case pg.Relations != nil:
-
+			return relation(o, pb, pg.Relations)
 		default:
 			return fmt.Errorf("unkown data type")
 		}
@@ -110,6 +111,7 @@ type Node struct {
 }
 
 func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) error {
+	// TODO: implement key/value string table
 	// st := pb.GetStringtable().GetS()
 	// dateGran := pb.GetDateGranularity()
 	gran := int64(pb.GetGranularity())
@@ -130,6 +132,84 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) er
 		n.Lon = 1e-9 * float32(lonOffset+(gran*lon))
 		// TODO: tags
 		o.ReadNode(n)
+	}
+	return nil
+}
+
+type Way struct {
+	ID      int64
+	NodeIDs []int64
+	Tags    map[string]string
+}
+
+func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
+	// TODO: implement key/value string table
+	// st := pb.GetStringtable().GetS()
+	// dateGran := pb.GetDateGranularity()
+
+	var (
+		w      Way
+		nodeID int64
+	)
+	for _, way := range ways {
+		w.ID = way.GetId()
+		nodeID = 0
+		w.NodeIDs = make([]int64, len(way.Refs))
+		for index := range way.Refs {
+			nodeID = way.Refs[index] + nodeID
+			w.NodeIDs[index] = nodeID
+		}
+		o.ReadWay(w)
+	}
+	return nil
+}
+
+type Relation struct {
+	ID      int64
+	Members []RelationMember
+}
+
+type MemberType int
+
+const (
+	NodeType MemberType = iota
+	WayType
+	RelationType
+)
+
+type RelationMember struct {
+	ID   int64
+	Type MemberType
+	Role string
+}
+
+func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation) error {
+	fmt.Println(relations)
+	// TODO: implement key/value string table
+	st := pb.Stringtable.S
+	// dateGran := pb.GetDateGranularity()
+	var r Relation
+	for _, rel := range relations {
+		r.ID = *rel.Id
+		r.Members = make([]RelationMember, len(rel.Memids))
+		var (
+			relMember RelationMember
+			memID     int64
+		)
+		for memIndex := range rel.Memids {
+			memID = rel.Memids[memIndex] + memID
+			relMember.ID = memID
+			switch rel.Types[memIndex] {
+			case OSMPBF.Relation_NODE:
+				relMember.Type = NodeType
+			case OSMPBF.Relation_WAY:
+				relMember.Type = WayType
+			case OSMPBF.Relation_RELATION:
+				relMember.Type = RelationType
+			}
+			relMember.Role = st[rel.RolesSid[memIndex]]
+		}
+		o.ReadRelation(r)
 	}
 	return nil
 }
