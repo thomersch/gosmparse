@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
+	"fmt"
 	"io"
 
 	"github.com/golang/protobuf/proto"
@@ -60,7 +61,7 @@ func (d *decoder) BlobData(blob *OSMPBF.Blob) (*OSMPBF.PrimitiveBlock, error) {
 	buf := make([]byte, blob.GetRawSize())
 	switch {
 	case blob.Raw != nil:
-		panic("reading raw not supported")
+		return nil, fmt.Errorf("Raw data is not supported.")
 	case blob.ZlibData != nil:
 		// TODO: share reader?
 		r, err := zlib.NewReader(bytes.NewReader(blob.GetZlibData()))

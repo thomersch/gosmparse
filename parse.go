@@ -72,6 +72,7 @@ func readBlock(r io.Reader, dec *decoder) (*OSMPBF.BlobHeader, *OSMPBF.Blob, err
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Println(blobHeader.GetType())
 	blob, err := dec.Blob(r, blobHeader)
 	if err != nil {
 		return nil, nil, err
@@ -80,15 +81,12 @@ func readBlock(r io.Reader, dec *decoder) (*OSMPBF.BlobHeader, *OSMPBF.Blob, err
 }
 
 func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
-	// tStart := time.Now()
 	pb, err := dec.BlobData(blob)
 	if err != nil {
 		return err
 	}
-	// fmt.Printf("Blob Data read: %v\n", time.Now().Sub(tStart))
 
 	for _, pg := range pb.GetPrimitivegroup() {
-		fmt.Println(pg.Dense != nil, pg.Ways != nil, pg.Relations != nil)
 		switch {
 		case pg.Dense != nil:
 			return denseNode(o, pb, pg.Dense)
@@ -97,7 +95,7 @@ func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
 		case pg.Relations != nil:
 			return relation(o, pb, pg.Relations)
 		default:
-			return fmt.Errorf("unkown data type")
+			return fmt.Errorf("unknown data type")
 		}
 	}
 	return nil

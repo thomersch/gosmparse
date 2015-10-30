@@ -30,7 +30,7 @@ func (r mockOSMReader) ReadRelation(rel Relation) {
 }
 
 func TestParse(t *testing.T) {
-	f, err := os.Open("niedersachsen-latest.osm.pbf")
+	f, err := os.Open("bremen-latest.osm.pbf")
 	ensure.Nil(t, err)
 	defer f.Close()
 	mr := iocontrol.NewMeasuredReader(f)
