@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/qedus/osmpbf/OSMPBF"
+	"github.com/thomersch/gosmparse/OSMPBF"
 )
 
 func Decode(r io.Reader, o OSMReader) error {
@@ -70,9 +70,9 @@ func readBlock(r io.Reader, dec *decoder) (*OSMPBF.BlobHeader, *OSMPBF.Blob, err
 	}
 	blobHeader, err := dec.BlobHeader(r, size)
 	if err != nil {
+		fmt.Println(73)
 		return nil, nil, err
 	}
-	fmt.Println(blobHeader.GetType())
 	blob, err := dec.Blob(r, blobHeader)
 	if err != nil {
 		return nil, nil, err
@@ -86,8 +86,10 @@ func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
 		return err
 	}
 
-	for _, pg := range pb.GetPrimitivegroup() {
+	for _, pg := range pb.Primitivegroup {
 		switch {
+		case pg.Nodes != nil:
+			return fmt.Errorf("Nodes are not supported")
 		case pg.Dense != nil:
 			return denseNode(o, pb, pg.Dense)
 		case pg.Ways != nil:
@@ -182,7 +184,6 @@ type RelationMember struct {
 }
 
 func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation) error {
-	fmt.Println(relations)
 	// TODO: implement key/value string table
 	st := pb.Stringtable.S
 	// dateGran := pb.GetDateGranularity()
@@ -205,7 +206,7 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 			case OSMPBF.Relation_RELATION:
 				relMember.Type = RelationType
 			}
-			relMember.Role = st[rel.RolesSid[memIndex]]
+			relMember.Role = string(st[rel.RolesSid[memIndex]])
 		}
 		o.ReadRelation(r)
 	}

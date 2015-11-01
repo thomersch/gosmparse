@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/thomersch/gosmparse/OSMPBF"
+
 	"github.com/golang/protobuf/proto"
-	"github.com/qedus/osmpbf/OSMPBF"
 )
 
 type decoder struct {
@@ -17,8 +18,7 @@ type decoder struct {
 
 func newDecoder() *decoder {
 	return &decoder{
-		headerBuf:     make([]byte, 4),
-		blobHeaderBuf: make([]byte, 13),
+		headerBuf: make([]byte, 4),
 	}
 }
 
@@ -31,12 +31,12 @@ func (d *decoder) HeaderSize(r io.Reader) (uint32, error) {
 
 // BlobHeader is not concurrency safe.
 func (d *decoder) BlobHeader(r io.Reader, size uint32) (*OSMPBF.BlobHeader, error) {
-	// check if shared buffer actually improves performance
-	if _, err := io.ReadFull(r, d.blobHeaderBuf); err != nil {
+	buf := make([]byte, size)
+	if _, err := io.ReadFull(r, buf); err != nil {
 		return nil, err
 	}
 	blobHeader := new(OSMPBF.BlobHeader)
-	if err := proto.Unmarshal(d.blobHeaderBuf, blobHeader); err != nil {
+	if err := proto.Unmarshal(buf, blobHeader); err != nil {
 		return nil, err
 	}
 	return blobHeader, nil
@@ -46,9 +46,11 @@ func (d *decoder) Blob(r io.Reader, blobHeader *OSMPBF.BlobHeader) (*OSMPBF.Blob
 	datasize := blobHeader.GetDatasize()
 	// TODO: share buffer, if always/often the same size
 	buf := make([]byte, datasize)
-	if _, err := io.ReadFull(r, buf); err != nil {
+	n, err := io.ReadFull(r, buf)
+	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Read %v bytes\n", n)
 	blob := new(OSMPBF.Blob)
 	if err := proto.Unmarshal(buf, blob); err != nil {
 		return nil, err
@@ -63,18 +65,22 @@ func (d *decoder) BlobData(blob *OSMPBF.Blob) (*OSMPBF.PrimitiveBlock, error) {
 	case blob.Raw != nil:
 		return nil, fmt.Errorf("Raw data is not supported.")
 	case blob.ZlibData != nil:
-		// TODO: share reader?
 		r, err := zlib.NewReader(bytes.NewReader(blob.GetZlibData()))
 		if err != nil {
 			return nil, err
 		}
 
-		_, err = io.ReadFull(r, buf)
+		n, err := io.ReadFull(r, buf)
 		if err != nil {
 			return nil, err
 		}
+		if n != int(blob.GetRawSize()) {
+			return nil, fmt.Errorf("expected %v bytes, read %v", blob.GetRawSize(), n)
+		}
+	default:
+		return nil, fmt.Errorf("found block with unknown data")
 	}
-	primitiveBlock := &OSMPBF.PrimitiveBlock{}
-	err := proto.Unmarshal(buf, primitiveBlock)
-	return primitiveBlock, err
+	var primitiveBlock = OSMPBF.PrimitiveBlock{}
+	err := proto.Unmarshal(buf, &primitiveBlock)
+	return &primitiveBlock, err
 }
