@@ -50,7 +50,6 @@ func (d *decoder) Blob(r io.Reader, blobHeader *OSMPBF.BlobHeader) (*OSMPBF.Blob
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Read %v bytes\n", n)
 	blob := new(OSMPBF.Blob)
 	if err := proto.Unmarshal(buf, blob); err != nil {
 		return nil, err
@@ -69,6 +68,7 @@ func (d *decoder) BlobData(blob *OSMPBF.Blob) (*OSMPBF.PrimitiveBlock, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer r.Close()
 
 		n, err := io.ReadFull(r, buf)
 		if err != nil {
