@@ -1,7 +1,9 @@
 package gosmparse
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -30,8 +32,11 @@ func (r mockOSMReader) ReadRelation(rel Relation) {
 }
 
 func TestParse(t *testing.T) {
-	// f, err := os.Open("/coding/planet-151026.osm.pbf")
-	f, err := os.Open("bremen-latest.osm.pbf")
+	testfile := os.Getenv("TESTFILE")
+	if testfile == "" {
+		t.Skip("No testfile specified. Please set `TESTFILE` environment variable with the file path.")
+	}
+	f, err := os.Open(testfile)
 	ensure.Nil(t, err)
 	defer f.Close()
 	mr := iocontrol.NewMeasuredReader(f)
@@ -41,4 +46,17 @@ func TestParse(t *testing.T) {
 	fmt.Printf("Speed: %v/s, total read: %v\n", humanize.Bytes(mr.BytesPerSec()), humanize.Bytes(uint64(mr.Total())))
 	fmt.Printf("Read %v nodes, %v ways, %v relations\n", atomic.LoadUint64(rdr.Nodes), atomic.LoadUint64(rdr.Ways), atomic.LoadUint64(rdr.Relations))
 	ensure.Nil(t, err)
+}
+
+func BenchmarkReadBlock(b *testing.B) {
+	testFile, err := os.Open("testdata/base.pbf")
+	ensure.Nil(b, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		reader := bytes.NewReader(buf)
+		decoder := newDecoder()
+		readBlock(reader, decoder)
+	}
 }
