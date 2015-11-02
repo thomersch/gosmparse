@@ -11,7 +11,7 @@ import (
 
 func Decode(r io.Reader, o OSMReader) error {
 	dec := newDecoder()
-	header, _, err := readBlock(r, dec)
+	header, _, err := dec.Block(r)
 	if err != nil {
 		return err
 	}
@@ -26,10 +26,9 @@ func Decode(r io.Reader, o OSMReader) error {
 	go func() {
 		defer close(blobs)
 		for {
-			_, blob, err := readBlock(r, dec)
+			_, blob, err := dec.Block(r)
 			if err != nil {
 				if err == io.EOF {
-					fmt.Println("Reading finished")
 					return
 				}
 				// TODO: proper handling
@@ -61,23 +60,6 @@ func Decode(r io.Reader, o OSMReader) error {
 	}
 	wg.Wait()
 	return nil
-}
-
-func readBlock(r io.Reader, dec *decoder) (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {
-	// read file block
-	size, err := dec.HeaderSize(r)
-	if err != nil {
-		return nil, nil, err
-	}
-	blobHeader, err := dec.BlobHeader(r, size)
-	if err != nil {
-		return nil, nil, err
-	}
-	blob, err := dec.Blob(r, blobHeader)
-	if err != nil {
-		return nil, nil, err
-	}
-	return blobHeader, blob, nil
 }
 
 func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {

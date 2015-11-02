@@ -12,49 +12,41 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type decoder struct {
-	headerBuf, blobHeaderBuf []byte
-}
+type decoder struct{}
 
 func newDecoder() *decoder {
-	return &decoder{
-		headerBuf: make([]byte, 4),
-	}
+	return &decoder{}
 }
 
-func (d *decoder) HeaderSize(r io.Reader) (uint32, error) {
-	if _, err := io.ReadFull(r, d.headerBuf); err != nil {
-		return 0, err
+func (d *decoder) Block(r io.Reader) (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {
+	// BlobHeaderLength
+	headerSizeBuf := make([]byte, 4)
+	if _, err := io.ReadFull(r, headerSizeBuf); err != nil {
+		return nil, nil, err
 	}
-	return binary.BigEndian.Uint32(d.headerBuf), nil
-}
+	headerSize := binary.BigEndian.Uint32(headerSizeBuf)
 
-// BlobHeader is not concurrency safe.
-func (d *decoder) BlobHeader(r io.Reader, size uint32) (*OSMPBF.BlobHeader, error) {
-	buf := make([]byte, size)
-	if _, err := io.ReadFull(r, buf); err != nil {
-		return nil, err
+	// BlobHeader
+	headerBuf := make([]byte, headerSize)
+	if _, err := io.ReadFull(r, headerBuf); err != nil {
+		return nil, nil, err
 	}
 	blobHeader := new(OSMPBF.BlobHeader)
-	if err := proto.Unmarshal(buf, blobHeader); err != nil {
-		return nil, err
+	if err := proto.Unmarshal(headerBuf, blobHeader); err != nil {
+		return nil, nil, err
 	}
-	return blobHeader, nil
-}
 
-func (d *decoder) Blob(r io.Reader, blobHeader *OSMPBF.BlobHeader) (*OSMPBF.Blob, error) {
-	datasize := blobHeader.GetDatasize()
-	// TODO: share buffer, if always/often the same size
-	buf := make([]byte, datasize)
-	_, err := io.ReadFull(r, buf)
+	// Blob
+	blobBuf := make([]byte, blobHeader.GetDatasize())
+	_, err := io.ReadFull(r, blobBuf)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	blob := new(OSMPBF.Blob)
-	if err := proto.Unmarshal(buf, blob); err != nil {
-		return nil, err
+	if err := proto.Unmarshal(blobBuf, blob); err != nil {
+		return nil, nil, err
 	}
-	return blob, nil
+	return blobHeader, blob, nil
 }
 
 // should be concurrency safe

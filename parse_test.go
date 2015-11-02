@@ -19,6 +19,10 @@ type mockOSMReader struct {
 	Relations *uint64
 }
 
+func newMockOSMReader() *mockOSMReader {
+	return &mockOSMReader{Nodes: new(uint64), Ways: new(uint64), Relations: new(uint64)}
+}
+
 func (r mockOSMReader) ReadNode(n Node) {
 	atomic.AddUint64(r.Nodes, 1)
 }
@@ -41,7 +45,7 @@ func TestParse(t *testing.T) {
 	defer f.Close()
 	mr := iocontrol.NewMeasuredReader(f)
 
-	rdr := mockOSMReader{Nodes: new(uint64), Ways: new(uint64), Relations: new(uint64)}
+	rdr := newMockOSMReader()
 	err = Decode(mr, rdr)
 	fmt.Printf("Speed: %v/s, total read: %v\n", humanize.Bytes(mr.BytesPerSec()), humanize.Bytes(uint64(mr.Total())))
 	fmt.Printf("Read %v nodes, %v ways, %v relations\n", atomic.LoadUint64(rdr.Nodes), atomic.LoadUint64(rdr.Ways), atomic.LoadUint64(rdr.Relations))
@@ -57,6 +61,20 @@ func BenchmarkReadBlock(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		reader := bytes.NewReader(buf)
 		decoder := newDecoder()
-		readBlock(reader, decoder)
+		decoder.Block(reader)
+	}
+}
+
+func BenchmarkReadMinimalFile(b *testing.B) {
+	testFile, err := os.Open("testdata/base.pbf")
+	ensure.Nil(b, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		reader := bytes.NewReader(buf)
+		or := newMockOSMReader()
+		err := Decode(reader, or)
+		ensure.Nil(b, err)
 	}
 }
