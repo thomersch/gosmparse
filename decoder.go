@@ -46,7 +46,7 @@ func (d *decoder) Blob(r io.Reader, blobHeader *OSMPBF.BlobHeader) (*OSMPBF.Blob
 	datasize := blobHeader.GetDatasize()
 	// TODO: share buffer, if always/often the same size
 	buf := make([]byte, datasize)
-	n, err := io.ReadFull(r, buf)
+	_, err := io.ReadFull(r, buf)
 	if err != nil {
 		return nil, err
 	}

@@ -87,23 +87,23 @@ func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
 	}
 
 	for _, pg := range pb.GetPrimitivegroup() {
-		if pg.Nodes != nil {
-			return fmt.Errorf("Nodes are not supported")
-		}
-		if pg.Dense != nil {
+		switch {
+		case pg.Dense != nil:
 			if err := denseNode(o, pb, pg.Dense); err != nil {
 				return err
 			}
-		}
-		if pg.Ways != nil {
+		case len(pg.Ways) != 0:
 			if err := way(o, pb, pg.Ways); err != nil {
 				return err
 			}
-		}
-		if pg.Relations != nil {
+		case len(pg.Relations) != 0:
 			if err := relation(o, pb, pg.Relations); err != nil {
 				return err
 			}
+		case len(pg.Nodes) != 0:
+			return fmt.Errorf("Nodes are not supported")
+		default:
+			return fmt.Errorf("no supported dat in primitive group")
 		}
 	}
 	return nil
