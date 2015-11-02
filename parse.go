@@ -20,6 +20,7 @@ func Decode(r io.Reader, o OSMReader) error {
 		return fmt.Errorf("Invalid header of first data block. Wanted: OSMHeader, have: %s", header.GetType())
 	}
 
+	// errChan := make(chan error)
 	// feeder
 	blobs := make(chan *OSMPBF.Blob, 200)
 	go func() {
@@ -70,7 +71,6 @@ func readBlock(r io.Reader, dec *decoder) (*OSMPBF.BlobHeader, *OSMPBF.Blob, err
 	}
 	blobHeader, err := dec.BlobHeader(r, size)
 	if err != nil {
-		fmt.Println(73)
 		return nil, nil, err
 	}
 	blob, err := dec.Blob(r, blobHeader)
@@ -86,18 +86,24 @@ func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
 		return err
 	}
 
-	for _, pg := range pb.Primitivegroup {
-		switch {
-		case pg.Nodes != nil:
+	for _, pg := range pb.GetPrimitivegroup() {
+		if pg.Nodes != nil {
 			return fmt.Errorf("Nodes are not supported")
-		case pg.Dense != nil:
-			return denseNode(o, pb, pg.Dense)
-		case pg.Ways != nil:
-			return way(o, pb, pg.Ways)
-		case pg.Relations != nil:
-			return relation(o, pb, pg.Relations)
-		default:
-			return fmt.Errorf("unknown data type")
+		}
+		if pg.Dense != nil {
+			if err := denseNode(o, pb, pg.Dense); err != nil {
+				return err
+			}
+		}
+		if pg.Ways != nil {
+			if err := way(o, pb, pg.Ways); err != nil {
+				return err
+			}
+		}
+		if pg.Relations != nil {
+			if err := relation(o, pb, pg.Relations); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
