@@ -18,6 +18,7 @@ type Way struct {
 type Relation struct {
 	ID      int64
 	Members []RelationMember
+	Tags    map[string]string
 }
 
 type MemberType int
@@ -89,7 +90,6 @@ func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
 }
 
 func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation) error {
-	// TODO: implement key/value string table
 	st := pb.Stringtable.S
 	// dateGran := pb.GetDateGranularity()
 	var r Relation
@@ -100,6 +100,11 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 			relMember RelationMember
 			memID     int64
 		)
+		r.Tags = make(map[string]string)
+		for pos, key := range rel.Keys {
+			keyString := string(st[int(key)])
+			r.Tags[keyString] = string(st[rel.Vals[pos]])
+		}
 		for memIndex := range rel.Memids {
 			memID = rel.Memids[memIndex] + memID
 			relMember.ID = memID

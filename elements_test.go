@@ -13,7 +13,7 @@ import (
 type mockedKVReader struct {
 	sync.RWMutex
 
-	nodes, ways map[int64]map[string]string
+	nodes, ways, rels map[int64]map[string]string
 }
 
 func (r mockedKVReader) ReadNode(n Node) {
@@ -29,7 +29,9 @@ func (r mockedKVReader) ReadWay(w Way) {
 }
 
 func (r mockedKVReader) ReadRelation(rel Relation) {
-
+	r.Lock()
+	defer r.Unlock()
+	r.rels[rel.ID] = rel.Tags
 }
 
 func TestDenseNodeKV(t *testing.T) {
@@ -70,5 +72,26 @@ func TestWaysKV(t *testing.T) {
 		1: {"name": "line", "highway": "primary"},
 		2: {"highway": "primary", "foo": "bar"},
 		3: {"unlogical": "true", "width": "3", "name": "line"},
+	})
+}
+
+func TestRelationsKV(t *testing.T) {
+	mr := mockedKVReader{
+		nodes: make(map[int64]map[string]string),
+		ways:  make(map[int64]map[string]string),
+		rels:  make(map[int64]map[string]string),
+	}
+
+	testFile, err := os.Open("testdata/relation_kv.osm.pbf")
+	ensure.Nil(t, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(t, err)
+	reader := bytes.NewReader(buf)
+
+	err = Decode(reader, mr)
+	ensure.Nil(t, err)
+	ensure.DeepEqual(t, mr.rels, map[int64]map[string]string{
+		1: {"natural": "water", "wikipedia": "trololol"},
+		2: {"unnatural": "water", "ref": "12", "name": "foobar"},
 	})
 }
