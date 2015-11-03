@@ -78,3 +78,17 @@ func BenchmarkReadMinimalFile(b *testing.B) {
 		ensure.Nil(b, err)
 	}
 }
+
+func BenchmarkCompleteFile(b *testing.B) {
+	testfile := os.Getenv("TESTFILE")
+	if testfile == "" {
+		b.Skip("No testfile specified. Please set `TESTFILE` environment variable with the file path.")
+	}
+
+	for i := 0; i < b.N; i++ {
+		file, err := os.Open(testfile)
+		ensure.Nil(b, err)
+		err = Decode(file, newMockOSMReader())
+		ensure.Nil(b, err)
+	}
+}
