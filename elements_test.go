@@ -2,7 +2,6 @@ package gosmparse
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -14,7 +13,7 @@ import (
 type mockedKVReader struct {
 	sync.RWMutex
 
-	nodes map[int64]map[string]string
+	nodes, ways map[int64]map[string]string
 }
 
 func (r mockedKVReader) ReadNode(n Node) {
@@ -24,7 +23,9 @@ func (r mockedKVReader) ReadNode(n Node) {
 }
 
 func (r mockedKVReader) ReadWay(w Way) {
-
+	r.Lock()
+	defer r.Unlock()
+	r.ways[w.ID] = w.Tags
 }
 
 func (r mockedKVReader) ReadRelation(rel Relation) {
@@ -44,5 +45,30 @@ func TestDenseNodeKV(t *testing.T) {
 
 	err = Decode(reader, mr)
 	ensure.Nil(t, err)
-	fmt.Println(mr.nodes)
+	ensure.DeepEqual(t, mr.nodes, map[int64]map[string]string{
+		1: {"key1": "value1", "key2": "value2"},
+		2: {"key2": "value2_node2"},
+		3: {"key1": "value1_node3"},
+	})
+}
+
+func TestWaysKV(t *testing.T) {
+	mr := mockedKVReader{
+		nodes: make(map[int64]map[string]string),
+		ways:  make(map[int64]map[string]string),
+	}
+
+	testFile, err := os.Open("testdata/way_kv.osm.pbf")
+	ensure.Nil(t, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(t, err)
+	reader := bytes.NewReader(buf)
+
+	err = Decode(reader, mr)
+	ensure.Nil(t, err)
+	ensure.DeepEqual(t, mr.ways, map[int64]map[string]string{
+		1: {"name": "line", "highway": "primary"},
+		2: {"highway": "primary", "foo": "bar"},
+		3: {"unlogical": "true", "width": "3", "name": "line"},
+	})
 }

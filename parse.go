@@ -85,7 +85,7 @@ func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
 		case len(pg.Nodes) != 0:
 			return fmt.Errorf("Nodes are not supported")
 		default:
-			return fmt.Errorf("no supported dat in primitive group")
+			return fmt.Errorf("no supported data in primitive group")
 		}
 	}
 	return nil

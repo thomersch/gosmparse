@@ -63,9 +63,8 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) er
 }
 
 func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
-	// TODO: implement key/value string table
-	// st := pb.GetStringtable().GetS()
 	// dateGran := pb.GetDateGranularity()
+	st := pb.Stringtable.S
 
 	var (
 		w      Way
@@ -75,6 +74,11 @@ func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
 		w.ID = way.GetId()
 		nodeID = 0
 		w.NodeIDs = make([]int64, len(way.Refs))
+		w.Tags = make(map[string]string)
+		for pos, key := range way.Keys {
+			keyString := string(st[int(key)])
+			w.Tags[keyString] = string(st[way.Vals[pos]])
+		}
 		for index := range way.Refs {
 			nodeID = way.Refs[index] + nodeID
 			w.NodeIDs[index] = nodeID
