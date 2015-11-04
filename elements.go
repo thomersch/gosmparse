@@ -40,7 +40,7 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) er
 	gran := int64(pb.GetGranularity())
 	latOffset := pb.GetLatOffset()
 	lonOffset := pb.GetLonOffset()
-	st := pb.Stringtable.S
+	st := byteTableToString(pb.Stringtable.S)
 
 	var (
 		n            Node
@@ -65,7 +65,7 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) er
 
 func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
 	// dateGran := pb.GetDateGranularity()
-	st := pb.Stringtable.S
+	st := byteTableToString(pb.Stringtable.S)
 
 	var (
 		w      Way
@@ -90,7 +90,7 @@ func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
 }
 
 func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation) error {
-	st := pb.Stringtable.S
+	st := byteTableToString(pb.Stringtable.S)
 	// dateGran := pb.GetDateGranularity()
 	var r Relation
 	for _, rel := range relations {
