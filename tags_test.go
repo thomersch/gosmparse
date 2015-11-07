@@ -45,7 +45,8 @@ func TestDenseNodeKV(t *testing.T) {
 	ensure.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
-	err = Decode(reader, &mr)
+	dec := NewDecoder(reader)
+	err = dec.Parse(&mr)
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, mr.nodes, map[int64]map[string]string{
 		1: {"key1": "value1", "key2": "value2"},
@@ -66,7 +67,8 @@ func TestWaysKV(t *testing.T) {
 	ensure.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
-	err = Decode(reader, &mr)
+	dec := NewDecoder(reader)
+	err = dec.Parse(&mr)
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, mr.ways, map[int64]map[string]string{
 		1: {"name": "line", "highway": "primary"},
@@ -88,7 +90,8 @@ func TestRelationsKV(t *testing.T) {
 	ensure.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
-	err = Decode(reader, &mr)
+	dec := NewDecoder(reader)
+	err = dec.Parse(&mr)
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, mr.rels, map[int64]map[string]string{
 		1: {"natural": "water", "wikipedia": "trololol"},

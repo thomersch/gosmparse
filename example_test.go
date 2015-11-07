@@ -1,14 +1,11 @@
-# OpenStreetMap PBF Parser in Go
+package gosmparse_test
 
-[![Build Status](https://travis-ci.org/thomersch/gosmparse.svg?branch=master)](https://travis-ci.org/thomersch/gosmparse)
+import (
+	"os"
 
-Gosmparse works already, but the API may change ([Documentation](https://godoc.org/github.com/thomersch/gosmparse)).
+	"github.com/thomersch/gosmparse"
+)
 
-It has been designed with performance and maximum usage convenience in mind; on an 4 core machine with an SSD it is able to read around 45 MB/s, which would parse a complete planet file in about 12 minutes.
-
-## Example Usage
-
-```go
 // Implement the gosmparser.OSMReader interface here.
 // Streaming data will call those functions.
 type dataHandler struct{}
@@ -29,4 +26,3 @@ func ExampleNewDecoder() {
 		panic(err)
 	}
 }
-```

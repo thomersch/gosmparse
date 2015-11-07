@@ -46,7 +46,8 @@ func TestParse(t *testing.T) {
 	mr := iocontrol.NewMeasuredReader(f)
 
 	rdr := newMockOSMReader()
-	err = Decode(mr, rdr)
+	d := NewDecoder(mr)
+	err = d.Parse(rdr)
 	fmt.Printf("Speed: %v/s, total read: %v\n", humanize.Bytes(mr.BytesPerSec()), humanize.Bytes(uint64(mr.Total())))
 	fmt.Printf("Read %v nodes, %v ways, %v relations\n", atomic.LoadUint64(rdr.Nodes), atomic.LoadUint64(rdr.Ways), atomic.LoadUint64(rdr.Relations))
 	ensure.Nil(t, err)
@@ -60,8 +61,8 @@ func BenchmarkReadBlock(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		reader := bytes.NewReader(buf)
-		decoder := newDecoder()
-		decoder.Block(reader)
+		decoder := NewDecoder(reader)
+		decoder.block()
 	}
 }
 
@@ -74,7 +75,8 @@ func BenchmarkReadMinimalFile(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		reader := bytes.NewReader(buf)
 		or := newMockOSMReader()
-		err := Decode(reader, or)
+		dec := NewDecoder(reader)
+		err := dec.Parse(or)
 		ensure.Nil(b, err)
 	}
 }
@@ -88,7 +90,8 @@ func BenchmarkCompleteFile(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		file, err := os.Open(testfile)
 		ensure.Nil(b, err)
-		err = Decode(file, newMockOSMReader())
+		dec := NewDecoder(file)
+		err = dec.Parse(newMockOSMReader())
 		ensure.Nil(b, err)
 	}
 }
