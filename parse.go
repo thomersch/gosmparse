@@ -20,7 +20,7 @@ func Decode(r io.Reader, o OSMReader) error {
 		return fmt.Errorf("Invalid header of first data block. Wanted: OSMHeader, have: %s", header.GetType())
 	}
 
-	// errChan := make(chan error)
+	errChan := make(chan error)
 	// feeder
 	blobs := make(chan *OSMPBF.Blob, 200)
 	go func() {
@@ -31,8 +31,7 @@ func Decode(r io.Reader, o OSMReader) error {
 				if err == io.EOF {
 					return
 				}
-				// TODO: proper handling
-				panic("error during parsing")
+				errChan <- err
 			}
 			blobs <- blob
 		}
@@ -51,15 +50,24 @@ func Decode(r io.Reader, o OSMReader) error {
 			defer wg.Done()
 			for blob := range blobs {
 				err := readElements(blob, dec, o)
-				// TODO: proper error handling
 				if err != nil {
-					panic(err)
+					errChan <- err
 				}
 			}
 		}()
 	}
-	wg.Wait()
-	return nil
+
+	finished := make(chan bool)
+	go func() {
+		wg.Wait()
+		finished <- true
+	}()
+	select {
+	case err = <-errChan:
+		return err
+	case <-finished:
+		return nil
+	}
 }
 
 func readElements(blob *OSMPBF.Blob, dec *decoder, o OSMReader) error {
