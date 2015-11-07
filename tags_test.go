@@ -16,19 +16,19 @@ type mockedKVReader struct {
 	nodes, ways, rels map[int64]map[string]string
 }
 
-func (r mockedKVReader) ReadNode(n Node) {
+func (r *mockedKVReader) ReadNode(n Node) {
 	r.Lock()
 	defer r.Unlock()
 	r.nodes[n.ID] = n.Tags
 }
 
-func (r mockedKVReader) ReadWay(w Way) {
+func (r *mockedKVReader) ReadWay(w Way) {
 	r.Lock()
 	defer r.Unlock()
 	r.ways[w.ID] = w.Tags
 }
 
-func (r mockedKVReader) ReadRelation(rel Relation) {
+func (r *mockedKVReader) ReadRelation(rel Relation) {
 	r.Lock()
 	defer r.Unlock()
 	r.rels[rel.ID] = rel.Tags
@@ -45,7 +45,7 @@ func TestDenseNodeKV(t *testing.T) {
 	ensure.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
-	err = Decode(reader, mr)
+	err = Decode(reader, &mr)
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, mr.nodes, map[int64]map[string]string{
 		1: {"key1": "value1", "key2": "value2"},
@@ -66,7 +66,7 @@ func TestWaysKV(t *testing.T) {
 	ensure.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
-	err = Decode(reader, mr)
+	err = Decode(reader, &mr)
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, mr.ways, map[int64]map[string]string{
 		1: {"name": "line", "highway": "primary"},
@@ -88,7 +88,7 @@ func TestRelationsKV(t *testing.T) {
 	ensure.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
-	err = Decode(reader, mr)
+	err = Decode(reader, &mr)
 	ensure.Nil(t, err)
 	ensure.DeepEqual(t, mr.rels, map[int64]map[string]string{
 		1: {"natural": "water", "wikipedia": "trololol"},
