@@ -2,6 +2,7 @@ package gosmparse
 
 import "github.com/thomersch/gosmparse/OSMPBF"
 
+// Node is an OSM data element with a position and tags (key/value pairs).
 type Node struct {
 	ID   int64
 	Lat  float32
@@ -9,18 +10,23 @@ type Node struct {
 	Tags map[string]string
 }
 
+// Way is an OSM data element that consists of Nodes and tags (key/value pairs).
+// Ways can describe line strings or areas.
 type Way struct {
 	ID      int64
 	NodeIDs []int64
 	Tags    map[string]string
 }
 
+// Relation is an OSM data element that contains multiple elements (RelationMember)
+// and has tags (key/value pairs).
 type Relation struct {
 	ID      int64
 	Members []RelationMember
 	Tags    map[string]string
 }
 
+// MemberType describes the type of a relation member (node/way/relation).
 type MemberType int
 
 const (
@@ -29,6 +35,8 @@ const (
 	RelationType
 )
 
+// RelationMember refers to an element in a relation. It contains the ID of the element
+// (node/way/relation) and the role.
 type RelationMember struct {
 	ID   int64
 	Type MemberType
