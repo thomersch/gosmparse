@@ -30,3 +30,20 @@ func ExampleNewDecoder() {
 	}
 }
 ```
+
+## Download & Parse
+
+It is possible to parse during download, so you don't have to wait for a download to finish to be able to start the parsing/processing. You can simply use the standard Go `net/http` package and pass `resp.Body` to the decoder.
+
+```go
+	resp, err := http.Get("http://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	dec := gosmparse.NewDecoder(resp.Body)
+	err = dec.Parse(&dataHandler{})
+	if err != nil {
+		panic(err)
+	}
+```
