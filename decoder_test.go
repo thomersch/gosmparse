@@ -8,9 +8,12 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/thomersch/gosmparse/OSMPBF"
+
 	"github.com/aybabtme/iocontrol"
 	"github.com/dustin/go-humanize"
 	"github.com/facebookgo/ensure"
+	"github.com/golang/protobuf/proto"
 )
 
 type mockOSMReader struct {
@@ -51,6 +54,22 @@ func TestParse(t *testing.T) {
 	fmt.Printf("Speed: %v/s, total read: %v\n", humanize.Bytes(mr.BytesPerSec()), humanize.Bytes(uint64(mr.Total())))
 	fmt.Printf("Read %v nodes, %v ways, %v relations\n", atomic.LoadUint64(rdr.Nodes), atomic.LoadUint64(rdr.Ways), atomic.LoadUint64(rdr.Relations))
 	ensure.Nil(t, err)
+}
+
+func TestBlobDataUncompressed(t *testing.T) {
+	originalPrimBlock := &OSMPBF.PrimitiveBlock{
+		Stringtable: &OSMPBF.StringTable{},
+	}
+	primitiveBlockBytes, err := proto.Marshal(originalPrimBlock)
+	ensure.Nil(t, err)
+	blob := &OSMPBF.Blob{
+		Raw: primitiveBlockBytes,
+	}
+
+	d := NewDecoder(nil)
+	primBlock, err := d.blobData(blob)
+	ensure.Nil(t, err)
+	ensure.DeepEqual(t, primBlock, originalPrimBlock)
 }
 
 func BenchmarkReadBlock(b *testing.B) {

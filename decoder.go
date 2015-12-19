@@ -159,7 +159,7 @@ func (d *Decoder) blobData(blob *OSMPBF.Blob) (*OSMPBF.PrimitiveBlock, error) {
 	buf := make([]byte, blob.GetRawSize())
 	switch {
 	case blob.Raw != nil:
-		return nil, fmt.Errorf("Raw data is not supported.")
+		buf = blob.Raw
 	case blob.ZlibData != nil:
 		r, err := zlib.NewReader(bytes.NewReader(blob.GetZlibData()))
 		if err != nil {
