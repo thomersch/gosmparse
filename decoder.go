@@ -31,6 +31,7 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
+// Parse starts the parsing process that will stream data into the given OSMReader.
 func (d *Decoder) Parse(o OSMReader) error {
 	d.o = o
 	header, _, err := d.block()
