@@ -61,14 +61,9 @@ func (d *Decoder) Parse(o OSMReader) error {
 		}
 	}()
 
-	// processer
-	numcpus := runtime.NumCPU() - 1
-	if numcpus < 1 {
-		numcpus = 1
-	}
-
+	consumerCount := runtime.GOMAXPROCS(0)
 	var wg sync.WaitGroup
-	for i := 0; i < numcpus; i++ {
+	for i := 0; i < consumerCount; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
