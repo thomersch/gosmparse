@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -38,6 +39,31 @@ func (r mockOSMReader) ReadRelation(rel Relation) {
 	atomic.AddUint64(r.Relations, 1)
 }
 
+type cachedReader struct {
+	Mtx   sync.Mutex
+	Nodes []Node
+	Ways  []Way
+	Rels  []Relation
+}
+
+func (r *cachedReader) ReadNode(n Node) {
+	r.Mtx.Lock()
+	defer r.Mtx.Unlock()
+	r.Nodes = append(r.Nodes, n)
+}
+
+func (r *cachedReader) ReadWay(w Way) {
+	r.Mtx.Lock()
+	defer r.Mtx.Unlock()
+	r.Ways = append(r.Ways, w)
+}
+
+func (r *cachedReader) ReadRelation(rel Relation) {
+	r.Mtx.Lock()
+	defer r.Mtx.Unlock()
+	r.Rels = append(r.Rels, rel)
+}
+
 func TestParse(t *testing.T) {
 	testfile := os.Getenv("TESTFILE")
 	if testfile == "" {
@@ -54,6 +80,29 @@ func TestParse(t *testing.T) {
 	fmt.Printf("Speed: %v/s, total read: %v\n", humanize.Bytes(mr.BytesPerSec()), humanize.Bytes(uint64(mr.Total())))
 	fmt.Printf("Read %v nodes, %v ways, %v relations\n", atomic.LoadUint64(rdr.Nodes), atomic.LoadUint64(rdr.Ways), atomic.LoadUint64(rdr.Relations))
 	ensure.Nil(t, err)
+}
+
+func TestMinimalParse(t *testing.T) {
+	testFile, err := os.Open("testdata/relation.pbf")
+	ensure.Nil(t, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(t, err)
+
+	reader := bytes.NewReader(buf)
+	or := &cachedReader{}
+	dec := NewDecoder(reader)
+	err = dec.Parse(or)
+	ensure.Nil(t, err)
+
+	ensure.DeepEqual(t, or.Rels[0].Members[0].ID, int64(15))
+	ensure.DeepEqual(t, or.Rels[0].Members[0].ID, int64(15))
+	ensure.DeepEqual(t, or.Rels[0].Members[1].ID, int64(16))
+	ensure.DeepEqual(t, or.Rels[0].Members[2].ID, int64(17))
+	ensure.DeepEqual(t, or.Rels[0].Members[3].ID, int64(20))
+	ensure.DeepEqual(t, or.Rels[0].Members[4].ID, int64(100))
+	ensure.DeepEqual(t, or.Rels[0].Members[5].ID, int64(101))
+	ensure.DeepEqual(t, or.Rels[0].Members[6].ID, int64(102))
+	ensure.DeepEqual(t, or.Rels[0].Members[7].ID, int64(98))
 }
 
 func TestBlobDataUncompressed(t *testing.T) {

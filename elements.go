@@ -125,6 +125,7 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 				relMember.Type = RelationType
 			}
 			relMember.Role = string(st[rel.RolesSid[memIndex]])
+			r.Members[memIndex] = relMember
 		}
 		o.ReadRelation(r)
 	}
