@@ -4,7 +4,7 @@
 
 Gosmparse works already, but the API may change ([Documentation](https://godoc.org/github.com/thomersch/gosmparse)).
 
-It has been designed with performance and maximum usage convenience in mind; on an 4 core machine with an SSD it is able to read around 45 MB/s, which would parse a complete planet file in about 12 minutes, which is already pretty good. If you find possible speed-ups or other improvements, let me know.
+It has been designed with performance and maximum usage convenience in mind; on an Intel Core i7-6820HQ with NVMe flash it is able to process 67 MB/s, so a planet file can be processed in less than 10 minutes. If you find possible speed-ups or other improvements, let me know.
 
 ## Characteristics
 
