@@ -163,3 +163,19 @@ func BenchmarkCompleteFile(b *testing.B) {
 		ensure.Nil(b, err)
 	}
 }
+
+func BenchmarkStringTable(b *testing.B) {
+	testFile, err := os.Open("testdata/stringtable.pbf")
+	ensure.Nil(b, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(b, err)
+
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		reader := bytes.NewBuffer(buf)
+		or := newMockOSMReader()
+		dec := NewDecoder(reader)
+		b.StartTimer()
+		dec.Parse(or)
+	}
+}

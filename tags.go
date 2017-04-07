@@ -12,11 +12,3 @@ func unpackTags(st []string, pos int, kv []int32) (int, map[string]string) {
 	}
 	return pos, tags
 }
-
-func byteTableToString(bt [][]byte) []string {
-	st := make([]string, len(bt))
-	for index, by := range bt {
-		st[index] = string(by)
-	}
-	return st
-}
