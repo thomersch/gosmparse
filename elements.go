@@ -5,8 +5,8 @@ import "github.com/thomersch/gosmparse/OSMPBF"
 // Node is an OSM data element with a position and tags (key/value pairs).
 type Node struct {
 	ID   int64
-	Lat  float32
-	Lon  float32
+	Lat  float64
+	Lon  float64
 	Tags map[string]string
 }
 
@@ -60,11 +60,10 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) er
 		lon = dn.Lon[index] + lon
 
 		n.ID = id
-		n.Lat = 1e-9 * float32(latOffset+(gran*lat))
-		n.Lon = 1e-9 * float32(lonOffset+(gran*lon))
+		n.Lat = 1e-9 * float64(latOffset+(gran*lat))
+		n.Lon = 1e-9 * float64(lonOffset+(gran*lon))
 
 		kvPos, n.Tags = unpackTags(pb.Stringtable.GetS(), kvPos, dn.KeysVals)
-		// TODO: tags
 		o.ReadNode(n)
 	}
 	return nil
