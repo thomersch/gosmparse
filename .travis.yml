@@ -4,6 +4,7 @@ go:
     - 1.6
     - 1.7
     - 1.8
+    - 1.9
 
 before_script:
     - curl -O http://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf
