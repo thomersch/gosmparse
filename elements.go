@@ -100,7 +100,7 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 	// dateGran := pb.GetDateGranularity()
 	var r Relation
 	for _, rel := range relations {
-		r.ID = *rel.Id
+		r.ID = rel.Id
 		r.Members = make([]RelationMember, len(rel.Memids))
 		var (
 			relMember RelationMember

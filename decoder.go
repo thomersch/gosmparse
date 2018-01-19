@@ -10,8 +10,6 @@ import (
 	"sync"
 
 	"github.com/thomersch/gosmparse/OSMPBF"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // A Decoder reads and decodes OSM data from an input stream.
@@ -104,7 +102,7 @@ func (d *Decoder) block() (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {
 		return nil, nil, err
 	}
 	blobHeader := new(OSMPBF.BlobHeader)
-	if err := proto.Unmarshal(headerBuf, blobHeader); err != nil {
+	if err := blobHeader.Unmarshal(headerBuf); err != nil {
 		return nil, nil, err
 	}
 
@@ -115,7 +113,7 @@ func (d *Decoder) block() (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {
 		return nil, nil, err
 	}
 	blob := new(OSMPBF.Blob)
-	if err := proto.Unmarshal(blobBuf, blob); err != nil {
+	if err := blob.Unmarshal(blobBuf); err != nil {
 		return nil, nil, err
 	}
 	return blobHeader, blob, nil
@@ -173,7 +171,7 @@ func (d *Decoder) blobData(blob *OSMPBF.Blob) (*OSMPBF.PrimitiveBlock, error) {
 	default:
 		return nil, fmt.Errorf("found block with unknown data")
 	}
-	var primitiveBlock = OSMPBF.PrimitiveBlock{}
-	err := proto.Unmarshal(buf, &primitiveBlock)
-	return &primitiveBlock, err
+	var primitiveBlock = &OSMPBF.PrimitiveBlock{}
+	err := primitiveBlock.Unmarshal(buf)
+	return primitiveBlock, err
 }
