@@ -2,9 +2,10 @@
 
 [![GoDoc](https://godoc.org/github.com/thomersch/gosmparse?status.svg)](https://godoc.org/github.com/thomersch/gosmparse) [![Build Status](https://travis-ci.org/thomersch/gosmparse.svg?branch=master)](https://travis-ci.org/thomersch/gosmparse)
 
-Gosmparse works already, but the API may change ([Documentation](https://godoc.org/github.com/thomersch/gosmparse)).
+gosmparse uses a callback driven API, which is stable ([Documentation](https://godoc.org/github.com/thomersch/gosmparse)).
 
-It has been designed with performance and maximum usage convenience in mind; on an Intel Core i7-6820HQ with NVMe flash it is able to process 67 MB/s, so a planet file can be processed in less than 10 minutes. If you find possible speed-ups or other improvements, let me know.
+It has been designed with performance and maximum usage convenience in mind; on an Intel Core i7-6820HQ with NVMe flash it is able to process ~75 MB/s, so a planet file can be processed in under 10 minutes. If you find possible speed-ups or other improvements, let me know.
+
 
 ## Characteristics
 
@@ -12,7 +13,7 @@ It has been designed with performance and maximum usage convenience in mind; on 
 * `panic`-free
 * tested with different files from different sources/generators
 * more than 80% test coverage and has benchmarks for all hot spots
-* one dependency only: [Go protobuf package](http://github.com/golang/protobuf)
+* one dependency only: [gogo protobuf package](https://github.com/gogo/protobuf/proto) (a few more are used by tests and are included in the module)
 * can read from any io.Reader (e.g. for parsing during download)
 
 ## Install

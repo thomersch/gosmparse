@@ -14,7 +14,7 @@ import (
 	"github.com/aybabtme/iocontrol"
 	"github.com/dustin/go-humanize"
 	"github.com/facebookgo/ensure"
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 )
 
 type mockOSMReader struct {
