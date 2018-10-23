@@ -17,6 +17,7 @@ type Decoder struct {
 	// QueueSize allows to tune the memory usage vs. parse speed.
 	// A larger QueueSize will consume more memory, but may speed up the parsing process.
 	QueueSize int
+	Workers   int
 	r         io.Reader
 	o         OSMReader
 }
@@ -59,9 +60,11 @@ func (d *Decoder) Parse(o OSMReader) error {
 		}
 	}()
 
-	consumerCount := runtime.GOMAXPROCS(0)
+	if d.Workers == 0 {
+		d.Workers = runtime.GOMAXPROCS(0)
+	}
 	var wg sync.WaitGroup
-	for i := 0; i < consumerCount; i++ {
+	for i := 0; i < d.Workers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
