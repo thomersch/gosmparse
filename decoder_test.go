@@ -105,6 +105,41 @@ func TestMinimalParse(t *testing.T) {
 	ensure.DeepEqual(t, or.Rels[0].Members[7].ID, int64(98))
 }
 
+func TestParseHistory(t *testing.T) {
+	testFile, err := os.Open("testdata/history.osh.pbf")
+	ensure.Nil(t, err)
+	buf, err := ioutil.ReadAll(testFile)
+	ensure.Nil(t, err)
+
+	reader := bytes.NewReader(buf)
+	or := &cachedReader{}
+	dec := NewDecoder(reader)
+	err = dec.Parse(or)
+	ensure.Nil(t, err)
+
+	ensure.DeepEqual(t, or.Nodes[0].Lat, float64(0.001))
+	ensure.DeepEqual(t, or.Nodes[0].Info.Visible, true)
+	ensure.DeepEqual(t, or.Nodes[0].Info.Timestamp, int64(1446404400000))
+	ensure.DeepEqual(t, or.Nodes[1].Info.UID, int32(1))
+	ensure.DeepEqual(t, or.Nodes[1].Info.Changeset, int64(1))
+	ensure.DeepEqual(t, or.Nodes[2].Lat, float64(0.003))
+	ensure.DeepEqual(t, or.Nodes[2].Info.Timestamp, int64(1554145200000))
+	ensure.DeepEqual(t, or.Nodes[3].Info.Visible, false)
+
+	ensure.DeepEqual(t, or.Ways[0].Info.Changeset, int64(1))
+	ensure.DeepEqual(t, or.Ways[1].Info.Changeset, int64(2))
+	ensure.DeepEqual(t, or.Ways[1].Info.User, "Another User")
+
+	ensure.DeepEqual(t, or.Rels[0].Members[0].ID, int64(1))
+	ensure.DeepEqual(t, or.Rels[0].Members[0].Type, NodeType)
+	ensure.DeepEqual(t, or.Rels[0].Members[1].ID, int64(1))
+	ensure.DeepEqual(t, or.Rels[0].Members[1].Type, WayType)
+	ensure.DeepEqual(t, or.Rels[0].Info.Visible, true)
+	ensure.DeepEqual(t, or.Rels[0].Info.User, "Dummy User")
+	ensure.DeepEqual(t, or.Rels[1].Info.Visible, false)
+	ensure.DeepEqual(t, or.Rels[1].Info.UID, int32(2))
+}
+
 func TestBlobDataUncompressed(t *testing.T) {
 	originalPrimBlock := &OSMPBF.PrimitiveBlock{
 		Stringtable: &OSMPBF.StringTable{},
