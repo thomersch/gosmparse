@@ -14,31 +14,32 @@ type Info struct {
 	Visible   bool
 }
 
-// Node is an OSM data element with a position and tags (key/value pairs).
-type Node struct {
+// Element contains common attributes of an OSM element (node/way/relation)
+type Element struct {
 	ID   int64
-	Lat  float64
-	Lon  float64
 	Tags map[string]string
 	Info *Info
+}
+
+// Node is an OSM data element with a position and tags (key/value pairs).
+type Node struct {
+	Element
+	Lat float64
+	Lon float64
 }
 
 // Way is an OSM data element that consists of Nodes and tags (key/value pairs).
 // Ways can describe line strings or areas.
 type Way struct {
-	ID      int64
+	Element
 	NodeIDs []int64
-	Tags    map[string]string
-	Info    *Info
 }
 
 // Relation is an OSM data element that contains multiple elements (RelationMember)
 // and has tags (key/value pairs).
 type Relation struct {
-	ID      int64
+	Element
 	Members []RelationMember
-	Tags    map[string]string
-	Info    *Info
 }
 
 // MemberType describes the type of a relation member (node/way/relation).
