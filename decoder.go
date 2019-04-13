@@ -20,6 +20,7 @@ type Decoder struct {
 	Workers   int
 	r         io.Reader
 	o         OSMReader
+	full      bool
 }
 
 // NewDecoder returns a new decoder that reads from r.
@@ -27,6 +28,16 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		r:         r,
 		QueueSize: 200,
+		full:      false,
+	}
+}
+
+// NewFullDecoder returns a new decoder that reads from r and decodes both geographic information and meta data.
+func NewFullDecoder(r io.Reader) *Decoder {
+	return &Decoder{
+		r:         r,
+		QueueSize: 200,
+		full:      true,
 	}
 }
 
@@ -131,15 +142,15 @@ func (d *Decoder) readElements(blob *OSMPBF.Blob) error {
 	for _, pg := range pb.Primitivegroup {
 		switch {
 		case pg.Dense != nil:
-			if err := denseNode(d.o, pb, pg.Dense); err != nil {
+			if err := denseNode(d.o, pb, pg.Dense, d.full); err != nil {
 				return err
 			}
 		case len(pg.Ways) != 0:
-			if err := way(d.o, pb, pg.Ways); err != nil {
+			if err := way(d.o, pb, pg.Ways, d.full); err != nil {
 				return err
 			}
 		case len(pg.Relations) != 0:
-			if err := relation(d.o, pb, pg.Relations); err != nil {
+			if err := relation(d.o, pb, pg.Relations, d.full); err != nil {
 				return err
 			}
 		case len(pg.Nodes) != 0:

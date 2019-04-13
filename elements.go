@@ -59,7 +59,7 @@ type RelationMember struct {
 	Role string
 }
 
-func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) error {
+func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes, full bool) error {
 	dateGran := int64(pb.GetDateGranularity())
 	gran := int64(pb.GetGranularity())
 	latOffset := pb.GetLatOffset()
@@ -84,7 +84,7 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes) er
 
 		kvPos, n.Tags = unpackTags(st, kvPos, dn.KeysVals)
 
-		if dn.Denseinfo != nil {
+		if full && dn.Denseinfo != nil {
 			ts = dn.Denseinfo.Timestamp[index] + ts
 			cs = dn.Denseinfo.Changeset[index] + cs
 			uid = dn.Denseinfo.Uid[index] + uid
@@ -123,7 +123,7 @@ func info(i *OSMPBF.Info, gran int64, st []string) *Info {
 	}
 }
 
-func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
+func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, full bool) error {
 	dateGran := int64(pb.GetDateGranularity())
 	st := pb.Stringtable.GetS()
 
@@ -144,13 +144,15 @@ func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way) error {
 			nodeID = way.Refs[index] + nodeID
 			w.NodeIDs[index] = nodeID
 		}
-		w.Info = info(way.GetInfo(), dateGran, st)
+		if full {
+			w.Info = info(way.GetInfo(), dateGran, st)
+		}
 		o.ReadWay(w)
 	}
 	return nil
 }
 
-func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation) error {
+func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation, full bool) error {
 	dateGran := int64(pb.GetDateGranularity())
 	st := pb.Stringtable.GetS()
 
@@ -181,7 +183,9 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 			relMember.Role = string(st[rel.RolesSid[memIndex]])
 			r.Members[memIndex] = relMember
 		}
-		r.Info = info(rel.GetInfo(), dateGran, st)
+		if full {
+			r.Info = info(rel.GetInfo(), dateGran, st)
+		}
 		o.ReadRelation(r)
 	}
 	return nil
