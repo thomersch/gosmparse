@@ -59,71 +59,46 @@ type RelationMember struct {
 	Role string
 }
 
-func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes, full bool) error {
-	dateGran := int64(pb.GetDateGranularity())
-	gran := int64(pb.GetGranularity())
-	latOffset := pb.GetLatOffset()
-	lonOffset := pb.GetLonOffset()
-	st := pb.Stringtable.GetS()
+type denseState struct {
+	DateGran             int64
+	PosGran              int64
+	LatOffset, LonOffset int64
+	Strings              []string
 
-	var (
-		n            Node
-		id, lat, lon int64
-		kvPos        int // position in kv slice
-		ts, cs       int64
-		uid, usid    int32
-	)
+	ID                    int64
+	Lat, Lon              int64
+	KVPos                 int
+	OffTime, OffChangeset int64
+	OffUserID, OffUser    int32
+}
+
+func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes, infoFn denseInfoFn) {
+	ds := denseState{
+		DateGran:  int64(pb.GetDateGranularity()),
+		PosGran:   int64(pb.GetGranularity()),
+		LatOffset: pb.GetLatOffset(),
+		LonOffset: pb.GetLonOffset(),
+		Strings:   pb.Stringtable.GetS(),
+	}
+
+	var n Node
 	for index := range dn.Id {
-		id = dn.Id[index] + id
-		lat = dn.Lat[index] + lat
-		lon = dn.Lon[index] + lon
+		ds.ID += dn.Id[index]
+		ds.Lat += dn.Lat[index]
+		ds.Lon += dn.Lon[index]
 
-		n.ID = id
-		n.Lat = 1e-9 * float64(latOffset+(gran*lat))
-		n.Lon = 1e-9 * float64(lonOffset+(gran*lon))
+		n.ID = ds.ID
+		n.Lat = 1e-9 * float64(ds.LatOffset+(ds.PosGran*ds.Lat))
+		n.Lon = 1e-9 * float64(ds.LonOffset+(ds.PosGran*ds.Lon))
 
-		kvPos, n.Tags = unpackTags(st, kvPos, dn.KeysVals)
+		ds.KVPos, n.Tags = unpackTags(ds.Strings, ds.KVPos, dn.KeysVals)
 
-		if full && dn.Denseinfo != nil {
-			ts = dn.Denseinfo.Timestamp[index] + ts
-			cs = dn.Denseinfo.Changeset[index] + cs
-			uid = dn.Denseinfo.Uid[index] + uid
-			usid = dn.Denseinfo.UserSid[index] + usid
-
-			visible := true
-			if len(dn.Denseinfo.Visible) > index {
-				visible = dn.Denseinfo.Visible[index]
-			}
-			n.Info = &Info{
-				Version:   dn.Denseinfo.Version[index],
-				Timestamp: ts * dateGran,
-				Changeset: cs,
-				UID:       uid,
-				User:      st[usid],
-				Visible:   visible,
-			}
-		}
-
+		n.Info = infoFn(dn.Denseinfo, &ds, index)
 		o.ReadNode(n)
 	}
-	return nil
 }
 
-func info(i *OSMPBF.Info, gran int64, st []string) *Info {
-	if i == nil {
-		return nil
-	}
-	return &Info{
-		Version:   i.GetVersion(),
-		Timestamp: i.GetTimestamp() * gran,
-		Changeset: i.GetChangeset(),
-		UID:       i.GetUid(),
-		User:      st[i.GetUserSid()],
-		Visible:   i.GetVisible(),
-	}
-}
-
-func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, full bool) error {
+func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, infoFn infoFn) error {
 	dateGran := int64(pb.GetDateGranularity())
 	st := pb.Stringtable.GetS()
 
@@ -144,15 +119,13 @@ func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, full bool) 
 			nodeID = way.Refs[index] + nodeID
 			w.NodeIDs[index] = nodeID
 		}
-		if full {
-			w.Info = info(way.GetInfo(), dateGran, st)
-		}
+		w.Info = info(way.GetInfo(), dateGran, st)
 		o.ReadWay(w)
 	}
 	return nil
 }
 
-func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation, full bool) error {
+func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation, infoFn infoFn) error {
 	dateGran := int64(pb.GetDateGranularity())
 	st := pb.Stringtable.GetS()
 
@@ -183,10 +156,43 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 			relMember.Role = string(st[rel.RolesSid[memIndex]])
 			r.Members[memIndex] = relMember
 		}
-		if full {
-			r.Info = info(rel.GetInfo(), dateGran, st)
-		}
+		r.Info = infoFn(rel.GetInfo(), dateGran, st)
 		o.ReadRelation(r)
 	}
 	return nil
+}
+
+func denseInfo(i *OSMPBF.DenseInfo, ds *denseState, index int) *Info {
+	ds.OffTime += i.Timestamp[index]
+	ds.OffChangeset += i.Changeset[index]
+	ds.OffUserID += i.Uid[index]
+	ds.OffUser += i.UserSid[index]
+
+	info := Info{
+		Version:   i.Version[index],
+		Timestamp: ds.OffTime * ds.DateGran,
+		Changeset: ds.OffChangeset,
+		UID:       ds.OffUserID,
+		User:      ds.Strings[ds.OffUser],
+	}
+
+	info.Visible = true
+	if len(i.Visible) > index {
+		info.Visible = i.Visible[index]
+	}
+	return &info
+}
+
+func info(i *OSMPBF.Info, gran int64, st []string) *Info {
+	if i == nil {
+		return nil
+	}
+	return &Info{
+		Version:   i.GetVersion(),
+		Timestamp: i.GetTimestamp() * gran,
+		Changeset: i.GetChangeset(),
+		UID:       i.GetUid(),
+		User:      st[i.GetUserSid()],
+		Visible:   i.GetVisible(),
+	}
 }

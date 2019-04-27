@@ -161,6 +161,7 @@ func BenchmarkReadBlock(b *testing.B) {
 	ensure.Nil(b, err)
 	buf, err := ioutil.ReadAll(testFile)
 	ensure.Nil(b, err)
+	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
 		reader := bytes.NewReader(buf)
@@ -174,6 +175,7 @@ func BenchmarkReadMinimalFile(b *testing.B) {
 	ensure.Nil(b, err)
 	buf, err := ioutil.ReadAll(testFile)
 	ensure.Nil(b, err)
+	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
 		reader := bytes.NewReader(buf)

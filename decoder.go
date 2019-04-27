@@ -21,14 +21,23 @@ type Decoder struct {
 	r         io.Reader
 	o         OSMReader
 	full      bool
+
+	denseInfoFn denseInfoFn
+	infoFn      infoFn
 }
+
+type denseInfoFn func(i *OSMPBF.DenseInfo, ds *denseState, index int) *Info
+type infoFn func(i *OSMPBF.Info, gran int64, st []string) *Info
 
 // NewDecoder returns a new decoder that reads from r.
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		r:         r,
 		QueueSize: 200,
-		full:      false,
+
+		// By default the decoder ignores the Info fields.
+		denseInfoFn: func(i *OSMPBF.DenseInfo, ds *denseState, index int) *Info { return nil },
+		infoFn:      func(i *OSMPBF.Info, gran int64, st []string) *Info { return nil },
 	}
 }
 
@@ -37,7 +46,9 @@ func NewFullDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		r:         r,
 		QueueSize: 200,
-		full:      true,
+
+		denseInfoFn: denseInfo,
+		infoFn:      info,
 	}
 }
 
@@ -142,15 +153,13 @@ func (d *Decoder) readElements(blob *OSMPBF.Blob) error {
 	for _, pg := range pb.Primitivegroup {
 		switch {
 		case pg.Dense != nil:
-			if err := denseNode(d.o, pb, pg.Dense, d.full); err != nil {
-				return err
-			}
+			denseNode(d.o, pb, pg.Dense, d.denseInfoFn)
 		case len(pg.Ways) != 0:
-			if err := way(d.o, pb, pg.Ways, d.full); err != nil {
+			if err := way(d.o, pb, pg.Ways, d.infoFn); err != nil {
 				return err
 			}
 		case len(pg.Relations) != 0:
-			if err := relation(d.o, pb, pg.Relations, d.full); err != nil {
+			if err := relation(d.o, pb, pg.Relations, d.infoFn); err != nil {
 				return err
 			}
 		case len(pg.Nodes) != 0:
