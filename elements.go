@@ -76,7 +76,7 @@ type denseState struct {
 	OffUserID, OffUser    int32
 }
 
-func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes, infoFn denseInfoFn) {
+func denseNode(o OSMBatchedReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes, infoFn denseInfoFn) {
 	ds := denseState{
 		DateGran:  int64(pb.GetDateGranularity()),
 		PosGran:   int64(pb.GetGranularity()),
@@ -85,66 +85,66 @@ func denseNode(o OSMReader, pb *OSMPBF.PrimitiveBlock, dn *OSMPBF.DenseNodes, in
 		Strings:   pb.Stringtable.GetS(),
 	}
 
-	var n Node
+	var nds = make([]Node, len(dn.Id))
 	for index := range dn.Id {
 		ds.ID += dn.Id[index]
 		ds.Lat += dn.Lat[index]
 		ds.Lon += dn.Lon[index]
 
-		n.ID = ds.ID
-		n.Lat = 1e-9 * float64(ds.LatOffset+(ds.PosGran*ds.Lat))
-		n.Lon = 1e-9 * float64(ds.LonOffset+(ds.PosGran*ds.Lon))
+		nds[index].ID = ds.ID
+		nds[index].Lat = 1e-9 * float64(ds.LatOffset+(ds.PosGran*ds.Lat))
+		nds[index].Lon = 1e-9 * float64(ds.LonOffset+(ds.PosGran*ds.Lon))
 
-		ds.KVPos, n.Tags = unpackTags(ds.Strings, ds.KVPos, dn.KeysVals)
+		ds.KVPos, nds[index].Tags = unpackTags(ds.Strings, ds.KVPos, dn.KeysVals)
 
-		n.Info = infoFn(dn.Denseinfo, &ds, index)
-		o.ReadNode(n)
+		nds[index].Info = infoFn(dn.Denseinfo, &ds, index)
 	}
+	o.ReadNodes(nds)
 }
 
-func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, infoFn infoFn) error {
+func way(o OSMBatchedReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, infoFn infoFn) error {
 	dateGran := int64(pb.GetDateGranularity())
 	st := pb.Stringtable.GetS()
 
 	var (
-		w      Way
+		wys    = make([]Way, len(ways))
 		nodeID int64
 	)
-	for _, way := range ways {
-		w.ID = way.GetId()
+	for i, way := range ways {
+		wys[i].ID = way.GetId()
 		nodeID = 0
-		w.NodeIDs = make([]int64, len(way.Refs))
-		w.Tags = make(map[string]string)
+		wys[i].NodeIDs = make([]int64, len(way.Refs))
+		wys[i].Tags = make(map[string]string)
 		for pos, key := range way.Keys {
 			keyString := string(st[int(key)])
-			w.Tags[keyString] = string(st[way.Vals[pos]])
+			wys[i].Tags[keyString] = string(st[way.Vals[pos]])
 		}
 		for index := range way.Refs {
 			nodeID = way.Refs[index] + nodeID
-			w.NodeIDs[index] = nodeID
+			wys[i].NodeIDs[index] = nodeID
 		}
-		w.Info = info(way.GetInfo(), dateGran, st)
-		o.ReadWay(w)
+		wys[i].Info = info(way.GetInfo(), dateGran, st)
 	}
+	o.ReadWays(wys)
 	return nil
 }
 
-func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation, infoFn infoFn) error {
+func relation(o OSMBatchedReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relation, infoFn infoFn) error {
 	dateGran := int64(pb.GetDateGranularity())
 	st := pb.Stringtable.GetS()
 
-	var r Relation
-	for _, rel := range relations {
-		r.ID = rel.Id
-		r.Members = make([]RelationMember, len(rel.Memids))
+	var rels = make([]Relation, len(relations))
+	for i, rel := range relations {
+		rels[i].ID = rel.Id
+		rels[i].Members = make([]RelationMember, len(rel.Memids))
 		var (
 			relMember RelationMember
 			memID     int64
 		)
-		r.Tags = make(map[string]string)
+		rels[i].Tags = make(map[string]string)
 		for pos, key := range rel.Keys {
 			keyString := string(st[int(key)])
-			r.Tags[keyString] = string(st[rel.Vals[pos]])
+			rels[i].Tags[keyString] = string(st[rel.Vals[pos]])
 		}
 		for memIndex := range rel.Memids {
 			memID = rel.Memids[memIndex] + memID
@@ -158,11 +158,11 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 				relMember.Type = RelationType
 			}
 			relMember.Role = string(st[rel.RolesSid[memIndex]])
-			r.Members[memIndex] = relMember
+			rels[i].Members[memIndex] = relMember
 		}
-		r.Info = infoFn(rel.GetInfo(), dateGran, st)
-		o.ReadRelation(r)
+		rels[i].Info = infoFn(rel.GetInfo(), dateGran, st)
 	}
+	o.ReadRelations(rels)
 	return nil
 }
 

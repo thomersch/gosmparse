@@ -19,7 +19,7 @@ type Decoder struct {
 	QueueSize int
 	Workers   int
 	r         io.Reader
-	o         OSMReader
+	o         OSMBatchedReader
 
 	denseInfoFn denseInfoFn
 	infoFn      infoFn
@@ -52,8 +52,7 @@ func NewDecoderWithInfo(r io.Reader) *Decoder {
 	}
 }
 
-// Parse starts the parsing process that will stream data into the given OSMReader.
-func (d *Decoder) Parse(o OSMReader) error {
+func (d *Decoder) BatchedParse(o OSMBatchedReader) error {
 	d.o = o
 	header, _, err := d.block()
 	if err != nil {
@@ -111,6 +110,11 @@ func (d *Decoder) Parse(o OSMReader) error {
 	case <-finished:
 		return nil
 	}
+}
+
+// Parse starts the parsing process that will stream data into the given OSMReader.
+func (d *Decoder) Parse(o OSMReader) error {
+	return d.BatchedParse(&batchedToSingleReader{SR: o})
 }
 
 func (d *Decoder) block() (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {

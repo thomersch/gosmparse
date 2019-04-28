@@ -40,6 +40,28 @@ func (r mockOSMReader) ReadRelation(rel Relation) {
 	atomic.AddUint64(r.Relations, 1)
 }
 
+type mockOSMBatchedReader struct {
+	Nodes     *uint64
+	Ways      *uint64
+	Relations *uint64
+}
+
+func newMockOSMBatchedReader() *mockOSMBatchedReader {
+	return &mockOSMBatchedReader{Nodes: new(uint64), Ways: new(uint64), Relations: new(uint64)}
+}
+
+func (r mockOSMBatchedReader) ReadNodes(ns []Node) {
+	atomic.AddUint64(r.Nodes, uint64(len(ns)))
+}
+
+func (r mockOSMBatchedReader) ReadWays(ws []Way) {
+	atomic.AddUint64(r.Ways, uint64(len(ws)))
+}
+
+func (r mockOSMBatchedReader) ReadRelations(rs []Relation) {
+	atomic.AddUint64(r.Relations, uint64(len(rs)))
+}
+
 type cachedReader struct {
 	Mtx   sync.Mutex
 	Nodes []Node
@@ -197,13 +219,25 @@ func BenchmarkCompleteFile(b *testing.B) {
 		b.Skip("No testfile specified. Please set `TESTFILE` environment variable with the file path.")
 	}
 
-	for i := 0; i < b.N; i++ {
-		file, err := os.Open(testfile)
-		ensure.Nil(b, err)
-		dec := NewDecoder(file)
-		err = dec.Parse(newMockOSMReader())
-		ensure.Nil(b, err)
-	}
+	b.Run("single", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			file, err := os.Open(testfile)
+			ensure.Nil(b, err)
+			dec := NewDecoder(file)
+			err = dec.Parse(newMockOSMReader())
+			ensure.Nil(b, err)
+		}
+	})
+
+	b.Run("batched", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			file, err := os.Open(testfile)
+			ensure.Nil(b, err)
+			dec := NewDecoder(file)
+			err = dec.BatchedParse(newMockOSMBatchedReader())
+			ensure.Nil(b, err)
+		}
+	})
 }
 
 func BenchmarkCompleteFileDecodeWithMetadata(b *testing.B) {
