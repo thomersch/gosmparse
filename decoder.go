@@ -20,7 +20,6 @@ type Decoder struct {
 	Workers   int
 	r         io.Reader
 	o         OSMReader
-	full      bool
 
 	denseInfoFn denseInfoFn
 	infoFn      infoFn
