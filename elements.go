@@ -1,20 +1,12 @@
 package gosmparse
 
 import (
+	"time"
+
 	"github.com/thomersch/gosmparse/OSMPBF"
 )
 
-// Info is optional metadata includes non-geographic information about an element
-type Info struct {
-	Version   int32
-	Timestamp int64
-	Changeset int64
-	UID       int32
-	User      string
-	Visible   bool
-}
-
-// Element contains common attributes of an OSM element (node/way/relation)
+// Element contains common attributes of an OSM element (node/way/relation).
 type Element struct {
 	ID   int64
 	Tags map[string]string
@@ -40,6 +32,16 @@ type Way struct {
 type Relation struct {
 	Element
 	Members []RelationMember
+}
+
+// Info is optional metadata includes non-geographic information about an element
+type Info struct {
+	Version   int
+	Timestamp time.Time
+	Changeset int64
+	UID       int
+	User      string
+	Visible   bool
 }
 
 // MemberType describes the type of a relation member (node/way/relation).
@@ -169,10 +171,10 @@ func denseInfo(i *OSMPBF.DenseInfo, ds *denseState, index int) *Info {
 	ds.OffUser += i.UserSid[index]
 
 	info := Info{
-		Version:   i.Version[index],
-		Timestamp: ds.OffTime * ds.DateGran,
+		Version:   int(i.Version[index]),
+		Timestamp: time.Unix(ds.OffTime*ds.DateGran/1000, 0),
 		Changeset: ds.OffChangeset,
-		UID:       ds.OffUserID,
+		UID:       int(ds.OffUserID),
 		User:      ds.Strings[ds.OffUser],
 	}
 
@@ -188,10 +190,10 @@ func info(i *OSMPBF.Info, gran int64, st []string) *Info {
 		return nil
 	}
 	return &Info{
-		Version:   i.GetVersion(),
-		Timestamp: i.GetTimestamp() * gran,
+		Version:   int(i.GetVersion()),
+		Timestamp: time.Unix(i.GetTimestamp()*gran/1000, 0),
 		Changeset: i.GetChangeset(),
-		UID:       i.GetUid(),
+		UID:       int(i.GetUid()),
 		User:      st[i.GetUserSid()],
 		Visible:   i.GetVisible(),
 	}

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/thomersch/gosmparse/OSMPBF"
 
@@ -118,12 +119,16 @@ func TestParseHistory(t *testing.T) {
 	ensure.Nil(t, err)
 
 	ensure.DeepEqual(t, or.Nodes[0].Lat, float64(0.001))
-	ensure.DeepEqual(t, or.Nodes[0].Info.Visible, true)
-	ensure.DeepEqual(t, or.Nodes[0].Info.Timestamp, int64(1446404400000))
-	ensure.DeepEqual(t, or.Nodes[1].Info.UID, int32(1))
-	ensure.DeepEqual(t, or.Nodes[1].Info.Changeset, int64(1))
-	ensure.DeepEqual(t, or.Nodes[2].Lat, float64(0.003))
-	ensure.DeepEqual(t, or.Nodes[2].Info.Timestamp, int64(1554145200000))
+	ensure.DeepEqual(t, or.Nodes[0].Info, &Info{
+		Visible:   true,
+		Timestamp: time.Unix(1446404400, 0),
+		UID:       1,
+		Changeset: 1,
+		Version:   1,
+		User:      "Dummy User",
+	})
+	ensure.DeepEqual(t, or.Nodes[2].Lat, 0.003)
+	ensure.DeepEqual(t, or.Nodes[2].Info.Timestamp, time.Unix(1554145200, 0))
 	ensure.DeepEqual(t, or.Nodes[3].Info.Visible, false)
 
 	ensure.DeepEqual(t, or.Ways[0].Info.Changeset, int64(1))
@@ -137,7 +142,7 @@ func TestParseHistory(t *testing.T) {
 	ensure.DeepEqual(t, or.Rels[0].Info.Visible, true)
 	ensure.DeepEqual(t, or.Rels[0].Info.User, "Dummy User")
 	ensure.DeepEqual(t, or.Rels[1].Info.Visible, false)
-	ensure.DeepEqual(t, or.Rels[1].Info.UID, int32(2))
+	ensure.DeepEqual(t, or.Rels[1].Info.UID, 2)
 }
 
 func TestBlobDataUncompressed(t *testing.T) {
