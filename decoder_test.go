@@ -114,7 +114,7 @@ func TestParseHistory(t *testing.T) {
 
 	reader := bytes.NewReader(buf)
 	or := &cachedReader{}
-	dec := NewFullDecoder(reader)
+	dec := NewDecoderWithInfo(reader)
 	err = dec.Parse(or)
 	ensure.Nil(t, err)
 
@@ -206,7 +206,7 @@ func BenchmarkCompleteFile(b *testing.B) {
 	}
 }
 
-func BenchmarkCompleteFileFullDecode(b *testing.B) {
+func BenchmarkCompleteFileDecodeWithMetadata(b *testing.B) {
 	testfile := os.Getenv("TESTFILE")
 	if testfile == "" {
 		b.Skip("No testfile specified. Please set `TESTFILE` environment variable with the file path.")
@@ -215,7 +215,7 @@ func BenchmarkCompleteFileFullDecode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		file, err := os.Open(testfile)
 		ensure.Nil(b, err)
-		dec := NewFullDecoder(file)
+		dec := NewDecoderWithInfo(file)
 		err = dec.Parse(newMockOSMReader())
 		ensure.Nil(b, err)
 	}

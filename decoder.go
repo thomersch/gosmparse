@@ -41,8 +41,9 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
-// NewFullDecoder returns a new decoder that reads from r and decodes both geographic information and meta data.
-func NewFullDecoder(r io.Reader) *Decoder {
+// NewDecoderWithInfo returns a new decoder similar to NewDecoder, but will
+// populate the Info field in the elements. Use this if you need meta data.
+func NewDecoderWithInfo(r io.Reader) *Decoder {
 	return &Decoder{
 		r:         r,
 		QueueSize: 200,

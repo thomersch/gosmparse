@@ -10,6 +10,8 @@ import (
 type Element struct {
 	ID   int64
 	Tags map[string]string
+
+	// Info is only populated if you use NewDecoderWithInfo.
 	Info *Info
 }
 
@@ -34,7 +36,7 @@ type Relation struct {
 	Members []RelationMember
 }
 
-// Info is optional metadata includes non-geographic information about an element
+// Info contains the metadata of an element.
 type Info struct {
 	Version   int
 	Timestamp time.Time

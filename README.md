@@ -15,7 +15,7 @@ It has been designed with performance and maximum usage convenience in mind; on 
 * more than 80% test coverage and has benchmarks for all hot spots
 * one dependency only: [gogo protobuf package](https://github.com/gogo/protobuf/proto) (a few more are used by tests and are included in the module)
 * can read from any io.Reader (e.g. for parsing during download)
-* support history file
+* supports history files
 
 ## Install
 
