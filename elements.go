@@ -114,7 +114,7 @@ func way(o OSMReader, pb *OSMPBF.PrimitiveBlock, ways []*OSMPBF.Way, infoFn info
 		w.ID = way.GetId()
 		nodeID = 0
 		w.NodeIDs = make([]int64, len(way.Refs))
-		w.Tags = make(map[string]string)
+		w.Tags = make(map[string]string, len(way.Keys))
 		for pos, key := range way.Keys {
 			keyString := string(st[int(key)])
 			w.Tags[keyString] = string(st[way.Vals[pos]])
@@ -141,7 +141,7 @@ func relation(o OSMReader, pb *OSMPBF.PrimitiveBlock, relations []*OSMPBF.Relati
 			relMember RelationMember
 			memID     int64
 		)
-		r.Tags = make(map[string]string)
+		r.Tags = make(map[string]string, len(rel.Keys))
 		for pos, key := range rel.Keys {
 			keyString := string(st[int(key)])
 			r.Tags[keyString] = string(st[rel.Vals[pos]])
