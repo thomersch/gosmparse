@@ -2,6 +2,7 @@ package gosmparse
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -97,4 +98,39 @@ func TestRelationsKV(t *testing.T) {
 		1: {"natural": "water", "wikipedia": "trololol"},
 		2: {"unnatural": "water", "ref": "12", "name": "foobar"},
 	})
+}
+
+func BenchmarkUnpackTags(b *testing.B) {
+	const NumStrings int = 16
+
+	var st []string
+	for j := 0; j < NumStrings; j++ {
+		st = append(st, fmt.Sprintf("abc%d", j))
+	}
+
+	// key, value .. key, value .. key, value
+	var kv []int32
+	for j := 0; j < NumStrings; j++ {
+		// Increase the number of tags each object gets
+		// as we go along
+		for i := 0; i < j; i++ {
+			kv = append(kv, int32((j+i)%NumStrings), int32((j+i+1)%NumStrings))
+		}
+		kv = append(kv, int32(0))
+	}
+
+	b.ResetTimer()
+	// Each object will get its own unique key/value pairs
+	for j := 0; j < b.N; j++ {
+		var pos int = 0
+
+		for pos < len(kv) {
+			newPos, _ := unpackTags(st, pos, kv)
+			if newPos == len(kv) {
+				break
+			}
+
+			pos = newPos
+		}
+	}
 }
