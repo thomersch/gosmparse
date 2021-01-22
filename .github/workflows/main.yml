@@ -1,0 +1,21 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Fetch OSM file for testing
+        run: wget https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf
+
+      - name: Run tests
+        run: go test -v -race
+        env:
+          TESTFILE: liechtenstein-latest.osm.pbf
