@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/facebookgo/ensure"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockedKVReader struct {
@@ -41,15 +41,15 @@ func TestDenseNodeKV(t *testing.T) {
 	}
 
 	testFile, err := os.Open("testdata/node_kv.osm.pbf")
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	buf, err := ioutil.ReadAll(testFile)
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
 	dec := NewDecoder(reader)
 	err = dec.Parse(&mr)
-	ensure.Nil(t, err)
-	ensure.DeepEqual(t, mr.nodes, map[int64]map[string]string{
+	assert.Nil(t, err)
+	assert.Equal(t, mr.nodes, map[int64]map[string]string{
 		1: {"key1": "value1", "key2": "value2"},
 		2: {"key2": "value2_node2"},
 		3: {"key1": "value1_node3"},
@@ -63,15 +63,15 @@ func TestWaysKV(t *testing.T) {
 	}
 
 	testFile, err := os.Open("testdata/way_kv.osm.pbf")
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	buf, err := ioutil.ReadAll(testFile)
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
 	dec := NewDecoder(reader)
 	err = dec.Parse(&mr)
-	ensure.Nil(t, err)
-	ensure.DeepEqual(t, mr.ways, map[int64]map[string]string{
+	assert.Nil(t, err)
+	assert.Equal(t, mr.ways, map[int64]map[string]string{
 		1: {"name": "line", "highway": "primary"},
 		2: {"highway": "primary", "foo": "bar"},
 		3: {"unlogical": "true", "width": "3", "name": "line"},
@@ -86,15 +86,15 @@ func TestRelationsKV(t *testing.T) {
 	}
 
 	testFile, err := os.Open("testdata/relation_kv.osm.pbf")
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	buf, err := ioutil.ReadAll(testFile)
-	ensure.Nil(t, err)
+	assert.Nil(t, err)
 	reader := bytes.NewReader(buf)
 
 	dec := NewDecoder(reader)
 	err = dec.Parse(&mr)
-	ensure.Nil(t, err)
-	ensure.DeepEqual(t, mr.rels, map[int64]map[string]string{
+	assert.Nil(t, err)
+	assert.Equal(t, mr.rels, map[int64]map[string]string{
 		1: {"natural": "water", "wikipedia": "trololol"},
 		2: {"unnatural": "water", "ref": "12", "name": "foobar"},
 	})

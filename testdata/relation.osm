@@ -11,4 +11,7 @@
 		<member type="way" ref="102" role=""/>
 		<member type="way" ref="98" role=""/>
 	</relation>
+	<relation id="2">
+		<member type="relation" ref="1" />
+	</relation>
 </osm>

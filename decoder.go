@@ -127,7 +127,7 @@ func (d *Decoder) block() (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {
 		return nil, nil, err
 	}
 	blobHeader := new(OSMPBF.BlobHeader)
-	if err := blobHeader.Unmarshal(headerBuf); err != nil {
+	if err := blobHeader.UnmarshalVT(headerBuf); err != nil {
 		return nil, nil, err
 	}
 
@@ -138,7 +138,7 @@ func (d *Decoder) block() (*OSMPBF.BlobHeader, *OSMPBF.Blob, error) {
 		return nil, nil, err
 	}
 	blob := new(OSMPBF.Blob)
-	if err := blob.Unmarshal(blobBuf); err != nil {
+	if err := blob.UnmarshalVT(blobBuf); err != nil {
 		return nil, nil, err
 	}
 	return blobHeader, blob, nil
@@ -195,6 +195,6 @@ func (d *Decoder) blobData(blob *OSMPBF.Blob) (*OSMPBF.PrimitiveBlock, error) {
 		return nil, fmt.Errorf("found block with unknown data")
 	}
 	var primitiveBlock = &OSMPBF.PrimitiveBlock{}
-	err := primitiveBlock.Unmarshal(buf)
+	err := primitiveBlock.UnmarshalVT(buf)
 	return primitiveBlock, err
 }
