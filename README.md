@@ -10,12 +10,16 @@ It has been designed with performance and maximum usage convenience in mind; on 
 ## Characteristics
 
 * fast
-* `panic`-free
 * tested with different files from different sources/generators
-* more than 80% test coverage and has benchmarks for all hot spots
-* one dependency only: [gogo protobuf package](https://github.com/gogo/protobuf/proto) (a few more are used by tests and are included in the module)
+* more than 85% test coverage and benchmarks for all hot spots
+* one dependency only: [protobuf package](google.golang.org/protobuf) (a few more are used by tests and are included in the module)
 * can read from any io.Reader (e.g. for parsing during download)
 * supports history files
+
+### Non-Features
+
+* Does not build geometries
+* No element cache
 
 ## Install
 
