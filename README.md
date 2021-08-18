@@ -1,6 +1,6 @@
 # OpenStreetMap PBF Parser in Go
 
-[![GoDoc](https://godoc.org/github.com/thomersch/gosmparse?status.svg)](https://godoc.org/github.com/thomersch/gosmparse) [![Build Status](https://travis-ci.org/thomersch/gosmparse.svg?branch=master)](https://travis-ci.org/thomersch/gosmparse)
+[![GoDoc](https://godoc.org/github.com/thomersch/gosmparse?status.svg)](https://godoc.org/github.com/thomersch/gosmparse)
 
 gosmparse uses a callback driven API, which is stable ([Documentation](https://godoc.org/github.com/thomersch/gosmparse)).
 
